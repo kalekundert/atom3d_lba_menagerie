@@ -10,21 +10,16 @@ from atom3d_lba_menagerie.models.escnn import (
         pool_fourier_avg,
         pool_avg,
         invariant_conv,
-        invariant_fourier,
         invariant_fourier_pool,
-        linear_relu_dropout,
-        linear_relu_bn,
         linear_bn_relu,
 )
-from atompaint.pooling import FourierExtremePool3D
 from atompaint.encoders.layers import (
         make_trivial_field_type, make_fourier_field_types,
 )
 from atompaint.vendored.escnn_nn_testing import (
-        check_invariance, check_equivariance, get_exact_3d_rotations,
+        check_invariance, get_exact_3d_rotations,
 )
 from escnn.gspaces import rot3dOnR3
-from torchinfo import summary
 from functools import partial
 
 def test_equivariant_cnn_baseline():
@@ -36,7 +31,6 @@ def test_equivariant_cnn_baseline():
     gspace = rot3dOnR3()
     so3 = gspace.fibergroup
     so2_z = False, -1
-    grid = so3.grid('thomson_cube', N=4)
     L = 2
 
     field_types = [
@@ -198,7 +192,6 @@ def test_equivariant_cnn_pool_fourier_avg():
     so3 = gspace.fibergroup
     so2_z = False, -1
     grid = so3.grid('thomson_cube', N=4)
-    grid_s2 = so3.sphere_grid('thomson_cube', N=4)
     L = 2
 
     field_types = [
@@ -249,8 +242,6 @@ def test_equivariant_cnn_pool_avg():
     gspace = rot3dOnR3()
     so3 = gspace.fibergroup
     so2_z = False, -1
-    grid = so3.grid('thomson_cube', N=4)
-    grid_s2 = so3.sphere_grid('thomson_cube', N=4)
     L = 2
 
     field_types = [
@@ -294,7 +285,6 @@ def test_equivariant_cnn_invariant_fourier_pool():
     gspace = rot3dOnR3()
     so3 = gspace.fibergroup
     so2_z = False, -1
-    grid = so3.grid('thomson_cube', N=4)
     grid_s2 = so3.sphere_grid('thomson_cube', N=4)
     L = 2
 
