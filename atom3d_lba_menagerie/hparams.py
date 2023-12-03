@@ -13,6 +13,16 @@ def label_hparams(key, *hparams):
             for x in hparams
     }
 
+def require_hparams(key, hparams):
+    if not key:
+        for known_key in hparams:
+            print(known_key)
+        raise SystemExit
+
+    else:
+        print('Hyperparameters:', x := hparams[key])
+        return x
+
 def interpolate(template, obj):
     try:
         obj = asdict(obj)
