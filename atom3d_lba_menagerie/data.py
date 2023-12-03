@@ -30,6 +30,7 @@ class VoxelizedDataModule(pl.LightningDataModule):
         self.dataloader_kwargs = dict(
                 batch_size=batch_size,
                 shuffle=shuffle,
+                num_workers=int(os.getenv('SLURM_JOB_CPUS_PER_NODE', 1)),
         )
 
     def setup(self, stage):
