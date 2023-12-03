@@ -72,7 +72,7 @@ class Cnn(nn.Module):
         self.model = nn.Sequential(*layers)
 
     def forward(self, x):
-        return self.model(x).view(-1)
+        return self.model(x)
 
 def get_default_cnn(in_channels, spatial_size):
     return Cnn(
