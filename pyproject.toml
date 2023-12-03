@@ -14,6 +14,17 @@ classifiers = [
   'Programming Language :: Python :: 3',
 ]
 dependencies = [
+  'atom3d',
+  'atompaint',
+  'escnn @ git+https://github.com/kalekundert/escnn@9094a5f2c424a765c5ebaabe9d79e7e06a29e91e',
+  'lightning',
+  'more_itertools',
+  'numpy',
+  'pandas',
+  'torch',
+  'torch_geometric',
+  'torchinfo',
+  'torchmetrics',
 ]
 
 [project.optional-dependencies]
