@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from atom3d_lba_menagerie.models.escnn import (
+from atom3d_menagerie.models.escnn import (
         EquivariantCnn,
         conv_bn_fourier,
         conv_bn_gated,

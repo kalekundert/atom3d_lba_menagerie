@@ -1,4 +1,4 @@
-from atom3d_lba_menagerie.hparams import label_hparams
+from atom3d_menagerie.hparams import label_hparams
 from dataclasses import dataclass
 
 def test_label_hparams_str_int():

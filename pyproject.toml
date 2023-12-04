@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "atom3d_lba_menagerie"
+name = "atom3d_menagerie"
 authors = [
   {name = "Kale Kundert", email = "kale@thekunderts.net"},
 ]
@@ -41,11 +41,11 @@ doc = [
 ]
 
 [project.urls]
-'Documentation' = 'https://atom3d_lba_menagerie.readthedocs.io/en/latest/'
-'Version Control' = 'https://github.com/kalekundert/atom3d_lba_menagerie'
-'Bug Tracker' = 'https://github.com/kalekundert/atom3d_lba_menagerie/issues'
-'Continuous Integration' = 'https://github.com/kalekundert/atom3d_lba_menagerie/actions'
-'Test Coverage' = 'https://coveralls.io/github/kalekundert/atom3d_lba_menagerie'
+'Documentation' = 'https://atom3d_menagerie.readthedocs.io/en/latest/'
+'Version Control' = 'https://github.com/kalekundert/atom3d_menagerie'
+'Bug Tracker' = 'https://github.com/kalekundert/atom3d_menagerie/issues'
+'Continuous Integration' = 'https://github.com/kalekundert/atom3d_menagerie/actions'
+'Test Coverage' = 'https://coveralls.io/github/kalekundert/atom3d_menagerie'
 
 [tool.ruff]
 select = ["F"]
@@ -61,7 +61,7 @@ doctest_optionflags = 'NORMALIZE_WHITESPACE'
 [tool.coverage.run]
 branch = true
 parallel = true
-source = ['atom3d_lba_menagerie']
+source = ['atom3d_menagerie']
 
 [tool.coverage.report]
 exclude_lines = [
@@ -71,6 +71,6 @@ exclude_lines = [
 
 [tool.semantic_release]
 branch = 'release'
-version_variable = 'atom3d_lba_menagerie/__init__.py:__version__'
+version_variable = 'atom3d_menagerie/__init__.py:__version__'
 build_command = 'python -m pip install flit && flit build'
 major_on_zero = false
