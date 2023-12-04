@@ -15,6 +15,7 @@ class LmdbDataModule(pl.LightningDataModule):
             make_inputs,
             batch_size,
             shuffle,
+            **kwargs,
     ):
         super().__init__()
 
@@ -24,6 +25,8 @@ class LmdbDataModule(pl.LightningDataModule):
                 batch_size=batch_size,
                 shuffle=shuffle,
                 num_workers=int(os.getenv('SLURM_JOB_CPUS_PER_NODE', 1)),
+                drop_last=True,
+                **kwargs,
         )
 
     def setup(self, stage):
