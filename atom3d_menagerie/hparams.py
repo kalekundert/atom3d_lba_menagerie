@@ -1,3 +1,5 @@
+import os
+
 from dataclasses import asdict
 from itertools import product
 from functools import partial
@@ -26,13 +28,17 @@ def label_hparams(key, *hparams):
 
 def require_hparams(key, hparams):
     if not key:
-        for known_key in hparams:
-            print(known_key)
-        raise SystemExit
+        try:
+            i = int(os.environ['SLURM_ARRAY_TASK_ID'])
+            key = list(hparams)[i]
 
-    else:
-        print('Hyperparameters:', x := hparams[key])
-        return x
+        except KeyError:
+            for known_key in hparams:
+                print(known_key)
+            raise SystemExit
+
+    print('Hyperparameters:', x := hparams[key])
+    return key, x
 
 def interpolate(template, obj):
     try:
