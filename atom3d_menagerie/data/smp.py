@@ -56,6 +56,9 @@ def get_default_smp_data_hparams():
     return dict(
             data_dir=get_default_smp_data_dir(),
             img_params=get_default_smp_img_params(),
+
+            # See expt #243 for the motivation behind this default.
+            quantum_prop='mu',
     )
 
 def get_default_smp_data_dir():
