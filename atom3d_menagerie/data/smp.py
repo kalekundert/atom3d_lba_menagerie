@@ -47,9 +47,10 @@ def make_smp_inputs(rng, item, img_params, quantum_prop):
 
     return img, label
 
-def get_default_smp_data():
+def get_default_smp_data(**kwargs):
     return VoxelizedSmpDataModule(
             **get_default_smp_data_hparams(),
+            **kwargs,
     )
 
 def get_default_smp_data_hparams():
@@ -65,11 +66,12 @@ def get_default_smp_data_dir():
     return Path(os.environ['ATOM3D_SMP_DATA_DIR'])
 
 def get_default_smp_img_params():
+    # Resolution and radius optimized in expt #244.
     return ImageParams(
         grid=Grid(
             length_voxels=21,
             resolution_A=1.0,
         ),
-        channels=['H', 'C', 'O', 'N', '.*'],
-        element_radii_A=0.5,
+        channels=['H', 'C', 'O', 'N', 'F'],
+        element_radii_A=1.0,
     )

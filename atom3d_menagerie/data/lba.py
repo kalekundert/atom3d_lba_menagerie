@@ -41,9 +41,10 @@ def make_lba_inputs(rng, item, img_params):
     return img, label
 
 
-def get_default_lba_data():
+def get_default_lba_data(**kwargs):
     return VoxelizedLbaDataModule(
             **get_default_lba_data_hparams(),
+            **kwargs,
     )
 
 def get_default_lba_data_hparams():

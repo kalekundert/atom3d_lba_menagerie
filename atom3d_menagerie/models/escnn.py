@@ -84,7 +84,6 @@ def conv_bn_gated(
         in_type: FieldType,
         out_type: FieldType,
         padding: int = 0,
-        function='p_elu',
 ):
     gate_type = add_gates(out_type)
     yield R3Conv(in_type, gate_type, kernel_size=3, padding=padding, bias=False)
