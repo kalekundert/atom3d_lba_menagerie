@@ -33,8 +33,9 @@ def require_hparams(key, hparams):
             key = list(hparams)[i]
 
         except KeyError:
-            for known_key in hparams:
-                print(known_key)
+            digits = len(str(len(hparams) - 1))
+            for i, known_key in enumerate(hparams):
+                print(f'{i:>{digits}} {known_key}')
             raise SystemExit
 
     print('Hyperparameters:', x := hparams[key])
