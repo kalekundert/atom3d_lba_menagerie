@@ -101,20 +101,20 @@ def conv_bn_fourier(
     yield IIDBatchNorm3d(out_type)
     yield FourierPointwise(out_type, ift_grid, function=function)
 
-def pool_conv(in_type):
+def pool_conv(in_type, padding=1):
     return R3Conv(
             in_type,
             in_type,
             kernel_size=3,
             stride=2,
-            padding=1,
+            padding=padding,
     )
 
-def pool_fourier_extreme(in_type, ift_grid):
-    return FourierExtremePool3D(
+def pool_avg(in_type):
+    return PointwiseAvgPoolAntialiased3D(
             in_type,
-            grid=ift_grid,
-            kernel_size=2,
+            sigma=0.6,
+            stride=2,
     )
 
 def pool_fourier_avg(in_type, ift_grid):
@@ -124,11 +124,11 @@ def pool_fourier_avg(in_type, ift_grid):
             stride=2,
     )
 
-def pool_avg(in_type):
-    return PointwiseAvgPoolAntialiased3D(
+def pool_fourier_extreme(in_type, ift_grid):
+    return FourierExtremePool3D(
             in_type,
-            sigma=0.6,
-            stride=2,
+            grid=ift_grid,
+            kernel_size=2,
     )
 
 def invariant_conv(in_type, out_channels, kernel_size, **kwargs):
