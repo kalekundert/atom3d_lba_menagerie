@@ -1,3 +1,4 @@
+import torch
 import os
 
 from dataclasses import asdict
@@ -51,3 +52,7 @@ def interpolate(template, obj):
         return template.format_map(obj)
     else:
         return template.format(obj)
+
+def if_gpu(gpu_value, cpu_value):
+    return gpu_value if torch.cuda.is_available() else cpu_value
+

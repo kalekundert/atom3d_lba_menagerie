@@ -3,6 +3,7 @@ import numpy as np
 import os
 
 from .utils import LmdbDataModule
+from atom3d_menagerie.hparams import if_gpu
 from atompaint.datasets.voxelize import image_from_atoms, ImageParams, Grid
 from atompaint.datasets.atoms import transform_atom_coords
 from atompaint.transform_pred.datasets.utils import sample_coord_frame
@@ -60,6 +61,14 @@ def get_default_smp_data_hparams():
 
             # See expt #243 for the motivation behind this default.
             quantum_prop='mu',
+
+            # The ATOM3D example uses a batch size of 256, but my models are
+            # bigger (21 voxels/side vs. 16 voxels/side).  A batch size of
+            # 128 fits into 12 GB, which is the smallest amount of VRAM
+            # that any GPU on the cluster has.
+            batch_size=if_gpu(128, 2),
+
+            shuffle=True,
     )
 
 def get_default_smp_data_dir():
