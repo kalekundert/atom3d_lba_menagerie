@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from atompaint.nonlinearities import add_gates
 from atompaint.pooling import FourierExtremePool3D, FourierAvgPool3D
@@ -84,11 +85,12 @@ def conv_bn_gated(
         in_type: FieldType,
         out_type: FieldType,
         padding: int = 0,
+        function=F.sigmoid,
 ):
     gate_type = add_gates(out_type)
     yield R3Conv(in_type, gate_type, kernel_size=3, padding=padding, bias=False)
     yield IIDBatchNorm3d(gate_type)
-    yield GatedNonLinearity1(gate_type)
+    yield GatedNonLinearity1(gate_type, function=function)
 
 def conv_bn_fourier(
         in_type: FieldType,
