@@ -6,7 +6,8 @@ from atompaint.nonlinearities import add_gates
 from atompaint.pooling import FourierExtremePool3D, FourierAvgPool3D
 from escnn.nn import (
         FieldType, FourierFieldType, GeometricTensor,
-        R3Conv, IIDBatchNorm3d, FourierPointwise, GatedNonLinearity1,
+        R3Conv, IIDBatchNorm3d,
+        FourierPointwise, GatedNonLinearity1, NormNonLinearity,
         PointwiseAvgPoolAntialiased3D,
 )
 from itertools import cycle
@@ -80,6 +81,18 @@ class Require1x1x1(nn.Module):
 
         return x
 
+
+def conv_bn_norm(
+        in_type: FieldType,
+        out_type: FieldType,
+        padding: int = 0,
+        function: str = 'n_relu',
+        bias: bool = True,
+):
+    gate_type = add_gates(out_type)
+    yield R3Conv(in_type, out_type, kernel_size=3, padding=padding, bias=False)
+    yield IIDBatchNorm3d(out_type)
+    yield NormNonLinearity(out_type, function=function, bias=bias)
 
 def conv_bn_gated(
         in_type: FieldType,
