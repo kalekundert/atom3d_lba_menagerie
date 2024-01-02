@@ -161,7 +161,6 @@ def invariant_fourier(
         *,
         ift_grid: Grid,
         function='p_elu',
-        pool: AdaptivePoolFactory,
 ):
     # This only works if the input size is 1x1x1, or if everything is 
     # average/max-pooled right afterward.  Otherwise, the tensor after this 
@@ -179,7 +178,7 @@ def invariant_fourier(
             in_type=in_type,
             out_type=out_type,
             grid=ift_grid,
-            function='p_elu',
+            function=function,
     )
     yield UnwrapTensor()
     yield nn.Flatten()
