@@ -89,7 +89,6 @@ def conv_bn_norm(
         function: str = 'n_relu',
         bias: bool = True,
 ):
-    gate_type = add_gates(out_type)
     yield R3Conv(in_type, out_type, kernel_size=3, padding=padding, bias=False)
     yield IIDBatchNorm3d(out_type)
     yield NormNonLinearity(out_type, function=function, bias=bias)
