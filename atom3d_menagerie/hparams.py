@@ -5,6 +5,7 @@ from dataclasses import asdict
 from itertools import product
 from functools import partial
 from collections.abc import Mapping
+from .logging import info
 
 def make_hparams(factory, **kwargs):
     hparams = []
@@ -39,7 +40,7 @@ def require_hparams(key, hparams):
                 print(f'{i:>{digits}} {known_key}')
             raise SystemExit
 
-    print('Hyperparameters:', x := hparams[key])
+    info('using hyperparameters:', x := hparams[key])
     return key, x
 
 def interpolate(template, obj):
