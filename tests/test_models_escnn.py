@@ -22,6 +22,8 @@ from atompaint.vendored.escnn_nn_testing import (
 from escnn.gspaces import rot3dOnR3
 from functools import partial
 
+# Remember that dropout layers are only equivariant in "eval" mode.
+
 def test_equivariant_cnn_baseline():
     # This "baseline" model is meant to use all of the simplest, most robustly 
     # equivariant layers.  In later tests, I'll incorporate more complicated, 
