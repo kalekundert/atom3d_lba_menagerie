@@ -3,7 +3,7 @@ import lightning.pytorch as pl
 from torch.nn import MSELoss
 from lightning.pytorch.loggers import TensorBoardLogger
 from torchmetrics.regression import (
-        MeanAbsoluteError, PearsonCorrCoef, SpearmanCorrCoef,
+        MeanAbsoluteError, PearsonCorrCoef
 )
 from dataclasses import dataclass, fields
 
@@ -15,7 +15,6 @@ class RegressionModule(pl.LightningModule):
         self.loss = MSELoss()
         self.mae = MeanAbsoluteError()
         self.pearson_r = PearsonCorrCoef()
-        self.spearman_r = SpearmanCorrCoef()
         self.optimizer = opt_factory(model.parameters())
 
     def configure_optimizers(self):
@@ -29,14 +28,12 @@ class RegressionModule(pl.LightningModule):
                 loss=self.loss(y_hat, y),
                 mae=self.mae(y_hat, y),
                 pearson_r=self.pearson_r(y_hat.flatten(), y.flatten()),
-                spearman_r=self.spearman_r(y_hat.flatten(), y.flatten()),
         )
 
     def training_step(self, batch, _):
         fwd = self.forward(batch)
         self._log_forward('train', fwd)
         return fwd.loss
-
 
     def validation_step(self, batch, _):
         fwd = self.forward(batch)
@@ -59,7 +56,6 @@ class Forward:
     loss: float
     mae: float
     pearson_r: float
-    spearman_r: float
 
 
 def get_trainer(out_dir, **kwargs):
