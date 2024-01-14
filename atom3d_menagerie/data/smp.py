@@ -49,10 +49,11 @@ def make_smp_inputs(rng, item, img_params, quantum_prop):
     return img, label
 
 def get_default_smp_data(**kwargs):
-    return VoxelizedSmpDataModule(
+    kwargs = {
             **get_default_smp_data_hparams(),
             **kwargs,
-    )
+    }
+    return VoxelizedSmpDataModule(**kwargs)
 
 def get_default_smp_data_hparams():
     return dict(

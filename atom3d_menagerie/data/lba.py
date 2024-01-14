@@ -43,10 +43,11 @@ def make_lba_inputs(rng, item, img_params):
 
 
 def get_default_lba_data(**kwargs):
-    return VoxelizedLbaDataModule(
+    kwargs = {
             **get_default_lba_data_hparams(),
             **kwargs,
-    )
+    }
+    return VoxelizedLbaDataModule(**kwargs)
 
 def get_default_lba_data_hparams():
     return dict(
