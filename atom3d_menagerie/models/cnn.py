@@ -96,6 +96,56 @@ def get_default_cnn_hparams():
             dropout=True,
     )
 
+
+def conv_relu_maxpool_layer(
+        *,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        stride: int = 1,
+        padding: int = 0,
+        dilation: int = 1,
+        groups: int = 1,
+        bias: bool = True,
+        pool_size: int,
+        pool_stride: Optional[int] = None,
+        pool_padding: int = 0,
+        pool_dilation: int = 1,
+
+) -> Iterable[nn.Module]:
+
+    yield nn.Conv3d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias,
+    )
+    yield nn.ReLU(inplace=True)
+
+    if pool_size > 1:
+        yield nn.MaxPool3d(
+                kernel_size=pool_size,
+                stride=pool_stride,
+                padding=pool_padding,
+                dilation=pool_dilation,
+        )
+
+def conv_relu_maxpool_dropout_layer(drop_rate: float, **kwargs):
+    yield from conv_relu_maxpool_layer(**kwargs)
+    yield nn.Dropout(drop_rate)
+
+def conv_relu_maxpool_bn_layer(out_channels: int, **kwargs):
+    yield from conv_relu_maxpool_layer(
+            out_channels=out_channels,
+            **kwargs,
+    )
+    yield nn.BatchNorm3d(out_channels)
+
+
 if __name__ == '__main__':
     from torchinfo import summary
 
