@@ -1,6 +1,9 @@
 import numpy as np
 import torch.nn as nn
 
+from typing import Optional
+from collections.abc import Iterable
+
 class Cnn(nn.Module):
 
     def __init__(
