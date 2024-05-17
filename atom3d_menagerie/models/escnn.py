@@ -199,7 +199,7 @@ def invariant_fourier_pool(
             in_type=in_type,
             out_type=out_type,
             grid=ift_grid,
-            function='p_elu',
+            function=function,
     )
     yield UnwrapTensor()
     yield pool
