@@ -114,6 +114,8 @@ def conv_relu_maxpool_layer(
         pool_stride: Optional[int] = None,
         pool_padding: int = 0,
         pool_dilation: int = 1,
+        post_conv_layers: Iterable[nn.Module] = (),
+        post_relu_layers: Iterable[nn.Module] = (),
 
 ) -> Iterable[nn.Module]:
 
@@ -127,7 +129,9 @@ def conv_relu_maxpool_layer(
             groups=groups,
             bias=bias,
     )
+    yield from post_conv_layers
     yield nn.ReLU(inplace=True)
+    yield from post_relu_layers
 
     if pool_size > 1:
         yield nn.MaxPool3d(
@@ -141,13 +145,12 @@ def conv_relu_maxpool_dropout_layer(drop_rate: float, **kwargs):
     yield from conv_relu_maxpool_layer(**kwargs)
     yield nn.Dropout(drop_rate)
 
-def conv_relu_maxpool_bn_layer(out_channels: int, **kwargs):
+def conv_bn_relu_maxpool_layer(out_channels: int, **kwargs):
     yield from conv_relu_maxpool_layer(
             out_channels=out_channels,
+            post_conv_layers=[nn.BatchNorm3d(out_channels)],
             **kwargs,
     )
-    yield nn.BatchNorm3d(out_channels)
-
 
 if __name__ == '__main__':
     from torchinfo import summary
