@@ -25,14 +25,16 @@ dependencies = [
   'torch_geometric',
   'torchinfo',
   'torchmetrics',
+  'torchyield',
 ]
 
 [project.optional-dependencies]
 test = [
-  'pytest',
-  'parametrize_from_file',
-  'matplotlib',
   'colorcet',
+  'matplotlib',
+  'parametrize_from_file',
+  'pytest',
+  'torchtest',
 ]
 doc = [
   'sphinx',
