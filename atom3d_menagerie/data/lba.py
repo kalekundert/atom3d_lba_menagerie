@@ -1,14 +1,19 @@
 import torch
 import pandas as pd
+import polars as pl
 import numpy as np
 import os
 
 from .utils import LmdbDataModule
 from atom3d_menagerie.hparams import if_gpu
-from atompaint.datasets.voxelize import image_from_atoms, ImageParams, Grid
-from atompaint.datasets.atoms import transform_atom_coords
+from macromol_gym_pretrain import image_from_atoms, ImageParams
+from macromol_voxelize import Grid
+from macromol_dataframe import (
+        transform_atom_coords, prune_hydrogen, prune_water,
+)
 from atompaint.transform_pred.datasets.utils import sample_coord_frame
 from atom3d.util.voxelize import get_center
+from pipeline_func import f
 from functools import partial
 from pathlib import Path
 
@@ -26,13 +31,43 @@ def make_lba_inputs(rng, item, img_params):
 
     frame_ix = sample_coord_frame(rng, ligand_center_i)
 
-    # I can't find the definition of the pocket, so I'm not 100% convinced 
-    # that it really contains all the atoms in the vicinity of the ligand.  
-    # But the example code uses the pocket atoms after a random rotation 
-    # around the ligand center, so I'll just do the same.
+    def prepare_atoms(df, is_polymer):
+        # Most of these columns aren't needed for training, they're only needed 
+        # for generating mmCIF output that can be nicely visualized in PyMOL 
+        # via `mmdf.write_mmcif()`.  Extracting these columns is a bit 
+        # inefficient, but it makes debugging easier.
+        return (
+                pl.from_pandas(df)
+                .select(
+                    chain_id=pl.col('chain').cast(str),
+                    subchain_id=pl.col('segid').cast(str).str.strip_chars().replace('', 'A'),
+                    alt_id=pl.col('altloc').cast(str).str.strip_chars().replace('', '.'),
+                    seq_id=pl.col('residue').cast(int),
+                    comp_id=pl.col('resname').cast(str),
+                    atom_id=pl.col('name').cast(str),
+                    element=pl.col('element').cast(str),
+                    x=pl.col('x').cast(float),
+                    y=pl.col('y').cast(float),
+                    z=pl.col('z').cast(float),
+                    occupancy=pl.col('occupancy').cast(float),
+                    b_factor=pl.col('bfactor').cast(float),
+                    is_polymer=pl.lit(is_polymer),
+                )
+        )
 
-    atoms_i = pd.concat([item['atoms_pocket'], item['atoms_ligand']])
-    atoms_x = transform_atom_coords(atoms_i, frame_ix)
+    atoms_i = pl.concat(
+            prepare_atoms(item[k], is_polymer)
+            for k, is_polymer in [
+                ('atoms_protein', True), 
+                ('atoms_ligand', False),
+            ]
+    )
+    atoms_x = (
+            atoms_i
+            | f(transform_atom_coords, frame_ix)
+            | f(prune_hydrogen)
+            | f(prune_water)
+    )
 
     img = image_from_atoms(atoms_x, img_params)
     img = torch.from_numpy(img).float()
@@ -71,6 +106,7 @@ def get_default_lba_img_params():
             length_voxels=21,
             resolution_A=1.0,
         ),
-        channels=['H', 'C', 'O', 'N', '.*'],
-        element_radii_A=0.5,
+        atom_radius_A=0.5,
+        element_channels=[['H'], ['C'], ['O'], ['N'], ['*']],
+        ligand_channel=False,
     )
