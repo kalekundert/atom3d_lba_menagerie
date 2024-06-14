@@ -3,7 +3,7 @@ import lightning.pytorch as pl
 from torch.nn import MSELoss
 from lightning.pytorch.loggers import TensorBoardLogger
 from torchmetrics.regression import (
-        MeanAbsoluteError, PearsonCorrCoef
+        MeanAbsoluteError, MeanSquaredError, PearsonCorrCoef
 )
 from dataclasses import dataclass, fields
 
@@ -14,6 +14,7 @@ class RegressionModule(pl.LightningModule):
         self.model = model
         self.loss = MSELoss()
         self.mae = MeanAbsoluteError()
+        self.rmse = MeanSquaredError(squared=False)
         self.pearson_r = PearsonCorrCoef()
         self.optimizer = opt_factory(model.parameters())
 
@@ -27,6 +28,7 @@ class RegressionModule(pl.LightningModule):
         return Forward(
                 loss=self.loss(y_hat, y),
                 mae=self.mae(y_hat, y),
+                rmse=self.rmse(y_hat, y),
                 pearson_r=self.pearson_r(y_hat.flatten(), y.flatten()),
         )
 
@@ -55,6 +57,7 @@ class RegressionModule(pl.LightningModule):
 class Forward:
     loss: float
     mae: float
+    rmse: float
     pearson_r: float
 
 
