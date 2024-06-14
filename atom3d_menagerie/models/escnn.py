@@ -63,6 +63,15 @@ class EquivariantCnn(nn.Module):
         x = GeometricTensor(x, self.layers[0].in_type)
         return self.layers(x)
 
+class WrapTensor(nn.Module):
+
+    def __init__(self, in_type):
+        super().__init__()
+        self.in_type = in_type
+
+    def forward(self, x: torch.Tensor) -> GeometricTensor:
+        return GeometricTensor(x, self.in_type)
+
 class UnwrapTensor(nn.Module):
 
     def forward(self, x: GeometricTensor) -> torch.Tensor:
@@ -162,9 +171,9 @@ def invariant_fourier(
         function='p_elu',
 ):
     # This only works if the input size is 1x1x1, or if everything is 
-    # average/max-pooled right afterward.  Otherwise, the tensor after this 
-    # operation will have all the same values, but in different positions, and 
-    # subsequent steps will break equivariance.
+    # average/max-pooled right afterward.  Otherwise, rotating the input will 
+    # result in output that has all the same values, but in different 
+    # positions.  Subsequent steps will break equivariance.
     yield Require1x1x1()
 
     out_type = FourierFieldType(
