@@ -1,52 +1,102 @@
 import torch.nn as nn
+import torch.nn.functional as F
 import torchyield as ty
 
 from torch import Tensor
 from typing import Optional
+
+def basic_block(
+        *,
+        in_channels: int,
+        mid_channels: Optional[int] = None,
+        out_channels: int,
+        stride: int = 1,
+):
+    if mid_channels is None:
+        mid_channels = out_channels
+
+    yield from ty.conv3_bn_relu_layer(
+            in_channels=in_channels,
+            out_channels=mid_channels,
+            kernel_size=3,
+            padding=1,
+            stride=stride,
+    )
+    yield from ty.conv3_bn_layer(
+            in_channels=mid_channels,
+            out_channels=out_channels,
+            kernel_size=3,
+            padding=1,
+    )
+
+def bottleneck_block(
+        *,
+        in_channels: int,
+        mid_channels: Optional[int] = None,
+        out_channels: int,
+        bottleneck_factor: Optional[int] = None,
+        stride: int = 1,
+):
+    if mid_channels is None:
+        if bottleneck_factor is None:
+            raise TypeError("must specify `mid_channels` or `bottleneck_factor`")
+        mid_channels = in_channels // bottleneck_factor
+
+    yield from ty.conv3_bn_relu_layer(
+            in_channels=in_channels,
+            out_channels=mid_channels,
+            kernel_size=1,
+            padding=0,
+    )
+    yield from ty.conv3_bn_relu_layer(
+            in_channels=mid_channels,
+            out_channels=mid_channels,
+            kernel_size=3,
+            padding=1,
+            stride=stride,
+    )
+    yield from ty.conv3_bn_layer(
+            in_channels=mid_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            padding=0,
+    )
 
 class ResBlock(nn.Module):
 
     def __init__(
             self, *,
             in_channels: int,
-            mid_channels: Optional[int] = None,
             out_channels: int,
-            in_stride: int = 1,
-            mid_stride: int = 1,
+            conv_factory: ty.LayerFactory = basic_block,
+            conv_stride: int = 1,
             skip_stride: int = 1,
             pool_factory: Optional[ty.LayerFactory] = None,
             pool_size: int = 1,
             pool_before_conv: bool = False,
+            **conv_kwargs,
     ):
         super().__init__()
 
-        if mid_channels is None:
-            mid_channels = out_channels
-
-        self.conv1, self.bn1, self.relu = ty.conv3_bn_relu_layer(
-                in_channels=in_channels,
-                out_channels=mid_channels,
-                kernel_size=3,
-                stride=in_stride,
-                padding=1,
-        )
-        self.conv2, self.bn2 = ty.conv3_bn_layer(
-                in_channels=mid_channels,
-                out_channels=out_channels,
-                kernel_size=3,
-                stride=mid_stride,
-                padding=1,
+        self.conv = ty.Layers(
+                conv_factory(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    stride=conv_stride,
+                    **conv_kwargs,
+                ),
         )
 
-        if in_channels == out_channels:
+        if in_channels == out_channels and skip_stride == 1:
             self.skip = None
         else:
-            self.skip = nn.Conv3d(
-                    in_channels,
-                    out_channels,
-                    kernel_size=1,
-                    stride=skip_stride,
-                    bias=False,
+            self.skip = ty.Layers(
+                    ty.conv3_bn_layer(
+                        in_channels=in_channels,
+                        out_channels=out_channels,
+                        kernel_size=1,
+                        stride=skip_stride,
+                    )
             )
 
         if (pool_factory is None) or (pool_size <= 1):
@@ -60,28 +110,24 @@ class ResBlock(nn.Module):
         if (self.pool is not None) and self.pool_before_conv:
             x = self.pool(x)
 
-        y = self.conv1(x)
-        y = self.bn1(y)
-        y = self.relu(y)
-
-        y = self.conv2(y)
-        y = self.bn2(y)
+        y = self.conv(x)
 
         if (self.pool is not None) and (not self.pool_before_conv):
             x = self.pool(x)
 
         if self.skip is not None:
             x = self.skip(x)
-            x = self.bn2(x)
 
-        y = self.relu(x + y)
+        y = F.relu(x + y)
 
         return y
 
 def resnet_layer(
+        *,
         in_channels: list[int],
         out_channels: list[int],
-        in_stride: int = 1,
+        conv_factory: ty.LayerFactory = basic_block,
+        conv_stride: int = 1,
         skip_stride: int = 1,
         pool_factory: Optional[ty.LayerFactory] = None,
         pool_size: int = 1,
@@ -89,6 +135,7 @@ def resnet_layer(
         block_repeats: int = 1,
         initial_conv_size: int = 3,
         final_conv_size: int = 0,
+        **conv_kwargs,
 ):
     # Always have an initial convolution with no padding, so we don't add zeros 
     # to the data that aren't really there.
@@ -107,12 +154,14 @@ def resnet_layer(
             resnet_blocks,
             in_channels=in_channels[i],
             out_channels=out_channels[i],
-            in_stride=in_stride,
+            conv_factory=conv_factory,
+            conv_stride=conv_stride,
             skip_stride=skip_stride,
             pool_factory=pool_factory,
             pool_size=pool_size,
             pool_before_conv=pool_before_conv,
             block_repeats=block_repeats,
+            **conv_kwargs,
     )
 
     # The last convolution isn't necessary.  It's useful in equivariant 
@@ -131,27 +180,33 @@ def resnet_blocks(
         *,
         in_channels: int,
         out_channels: int,
-        in_stride: int = 1,
+        conv_factory: ty.LayerFactory = basic_block,
+        conv_stride: int = 1,
         skip_stride: int = 1,
         pool_factory: Optional[ty.LayerFactory] = None,
         pool_size: int = 1,
         pool_before_conv: bool = False,
         block_repeats: int = 1,
+        **conv_kwargs,
 ):
     yield ResBlock(
             in_channels=in_channels,
             out_channels=out_channels,
-            in_stride=in_stride,
+            conv_factory=conv_factory,
+            conv_stride=conv_stride,
             skip_stride=skip_stride,
             pool_factory=pool_factory,
             pool_size=pool_size,
             pool_before_conv=pool_before_conv,
+            **conv_kwargs,
     )
 
     for i in range(block_repeats - 1):
         yield ResBlock(
                 in_channels=out_channels,
                 out_channels=out_channels,
+                conv_factory=conv_factory,
+                **conv_kwargs,
         )
 
 

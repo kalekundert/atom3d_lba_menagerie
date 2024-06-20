@@ -1,16 +1,19 @@
 import torch
 import torch.nn as nn
 
-from atom3d_menagerie.models.resnet import resnet_layer
+from atom3d_menagerie.models.resnet import resnet_layer, bottleneck_block
 from torch.optim import Adam
 from torchyield import Layers, channels
 from torchtest import assert_vars_change
 
 def test_resnet_stride():
+    # Not a perfect fit.  A convolution with stride=2 on an input with an even 
+    # dimension results in an output with exactly half that dimension, but the 
+    # filters only require padding on one side.
     resnet = Layers(
             resnet_layer(
                 **channels([1, 2, 4, 8, 16]),
-                in_stride=2,
+                conv_stride=2,
                 skip_stride=2,
                 block_repeats=2,
             ),
@@ -52,3 +55,26 @@ def test_resnet_pool_final_conv():
             device='cpu',
     )
 
+def test_resnet_bottleneck():
+    resnet = Layers(
+            resnet_layer(
+                **channels([1, 2, 4, 8, 16]),
+                bottleneck_factor=2,
+                conv_factory=bottleneck_block,
+                conv_stride=2,
+                skip_stride=2,
+                block_repeats=2,
+            ),
+            nn.Flatten(),
+            nn.Linear(16, 1),
+    )
+    x = torch.randn(2, 1, 10, 10, 10)
+    y = torch.randn(2, 1)
+
+    assert_vars_change(
+            model=resnet,
+            loss_fn=nn.MSELoss(),
+            optim=Adam(resnet.parameters()),
+            batch=(x, y),
+            device='cpu',
+    )
