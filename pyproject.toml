@@ -16,7 +16,9 @@ classifiers = [
 dependencies = [
   'atom3d',
   'atompaint',
-  'escnn @ git+https://github.com/kalekundert/escnn@9094a5f2c424a765c5ebaabe9d79e7e06a29e91e',
+  # The `escnn` dependency is implicitly brought in by `atompaint`.  This is a 
+  # complicated dependency, because I require a specific commit from my own 
+  # clone of the project, so best to only give it in one place.
   'lightning',
   'more_itertools',
   'numpy',
