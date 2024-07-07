@@ -1,4 +1,5 @@
-import lightning.pytorch as pl
+import lightning.pytorch as L
+import polars as pl
 import numpy as np
 import os
 
@@ -6,7 +7,7 @@ from atom3d.datasets import LMDBDataset
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 from pathlib import Path
 
-class LmdbDataModule(pl.LightningDataModule):
+class LmdbDataModule(L.LightningDataModule):
 
     def __init__(
             self,
@@ -14,7 +15,8 @@ class LmdbDataModule(pl.LightningDataModule):
             data_dir,
             make_inputs,
             batch_size,
-            shuffle,
+            shuffle=True,
+            num_workers=None,
             **kwargs,
     ):
         super().__init__()
@@ -23,11 +25,13 @@ class LmdbDataModule(pl.LightningDataModule):
         self.make_inputs = make_inputs
         self.dataloader_kwargs = dict(
                 batch_size=batch_size,
-                shuffle=shuffle,
-                num_workers=int(os.getenv('SLURM_JOB_CPUS_PER_NODE', 1)),
+                num_workers=(
+                    num_workers or int(os.getenv('SLURM_JOB_CPUS_PER_NODE', 1))
+                ),
                 drop_last=True,
                 **kwargs,
         )
+        self.shuffle = shuffle
 
     def setup(self, stage):
         if stage == 'fit':
@@ -38,7 +42,7 @@ class LmdbDataModule(pl.LightningDataModule):
             self.test_dataset = self._make_dataset('test')
 
     def train_dataloader(self):
-        return self._make_dataloader(self.train_dataset)
+        return self._make_dataloader(self.train_dataset, shuffle=self.shuffle)
 
     def val_dataloader(self):
         return self._make_dataloader(self.val_dataset)
@@ -46,21 +50,22 @@ class LmdbDataModule(pl.LightningDataModule):
     def test_dataloader(self):
         return self._make_dataloader(self.test_dataset)
 
-    def _make_dataloader(self, dataset):
-        kwargs = self.dataloader_kwargs.copy()
-        shuffle = kwargs.pop('shuffle')
-
-        indices = range(len(dataset))
-        if shuffle:
-            indices = RandomSampler(indices)
-
-        sampler = EpochSampler(indices)
-
-        return DataLoader(dataset, sampler=sampler, **kwargs)
-
     def _make_dataset(self, split_dir):
         atom_dataset = LMDBDataset(self.data_dir / split_dir)
         return AugmentedDataset(atom_dataset, self.make_inputs)
+
+    def _make_dataloader(self, dataset, shuffle=False):
+        kwargs = self.dataloader_kwargs.copy()
+        indices = self._pick_indices(dataset, shuffle)
+        sampler = EpochSampler(indices)
+        return DataLoader(dataset, sampler=sampler, **kwargs)
+
+    def _pick_indices(self, dataset, shuffle):
+        indices = range(len(dataset))
+        if shuffle:
+            indices = RandomSampler(indices)
+        return indices
+
 
 class AugmentedDataset(Dataset):
 
@@ -93,4 +98,31 @@ class EpochSampler:
     def set_epoch(self, epoch):
         self.curr_epoch = epoch
 
+
+
+def convert_to_mmdf_format(atoms, **extra_cols):
+    # Most of these columns aren't needed for training; they're only needed for 
+    # generating mmCIF output that can be nicely visualized in PyMOL via 
+    # `mmdf.write_mmcif()`.  Extracting these columns is a bit inefficient, but 
+    # it makes debugging easier.
+    return (
+            pl.from_pandas(atoms)
+            .select(
+                chain_id=pl.col('chain').cast(str),
+                subchain_id=pl.col('segid').cast(str).str.strip_chars().replace('', 'A'),
+                alt_id=pl.col('altloc').cast(str).str.strip_chars().replace('', '.'),
+                seq_id=pl.col('residue').cast(int),
+                comp_id=pl.col('resname').cast(str),
+                atom_id=pl.col('name').cast(str),
+                element=pl.col('element').cast(str),
+                x=pl.col('x').cast(float),
+                y=pl.col('y').cast(float),
+                z=pl.col('z').cast(float),
+                occupancy=pl.col('occupancy').cast(float),
+                b_factor=pl.col('bfactor').cast(float),
+            )
+            .with_columns(
+                **extra_cols,
+            )
+    )
 

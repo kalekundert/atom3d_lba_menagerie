@@ -3,7 +3,7 @@ import polars as pl
 import numpy as np
 import os
 
-from .utils import LmdbDataModule
+from .utils import LmdbDataModule, convert_to_mmdf_format
 from atom3d_menagerie.hparams import if_gpu
 from macromol_gym_pretrain import image_from_atoms, ImageParams
 from macromol_voxelize import Grid
@@ -30,32 +30,8 @@ def make_lba_inputs(rng, item, img_params):
 
     frame_ix = sample_coord_frame(rng, ligand_center_i)
 
-    def prepare_atoms(df, is_polymer):
-        # Most of these columns aren't needed for training, they're only needed 
-        # for generating mmCIF output that can be nicely visualized in PyMOL 
-        # via `mmdf.write_mmcif()`.  Extracting these columns is a bit 
-        # inefficient, but it makes debugging easier.
-        return (
-                pl.from_pandas(df)
-                .select(
-                    chain_id=pl.col('chain').cast(str),
-                    subchain_id=pl.col('segid').cast(str).str.strip_chars().replace('', 'A'),
-                    alt_id=pl.col('altloc').cast(str).str.strip_chars().replace('', '.'),
-                    seq_id=pl.col('residue').cast(int),
-                    comp_id=pl.col('resname').cast(str),
-                    atom_id=pl.col('name').cast(str),
-                    element=pl.col('element').cast(str),
-                    x=pl.col('x').cast(float),
-                    y=pl.col('y').cast(float),
-                    z=pl.col('z').cast(float),
-                    occupancy=pl.col('occupancy').cast(float),
-                    b_factor=pl.col('bfactor').cast(float),
-                    is_polymer=pl.lit(is_polymer),
-                )
-        )
-
     atoms_i = pl.concat(
-            prepare_atoms(item[k], is_polymer)
+            convert_to_mmdf_format(item[k], is_polymer=pl.lit(is_polymer))
             for k, is_polymer in [
                 ('atoms_protein', True), 
                 ('atoms_ligand', False),
